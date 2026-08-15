@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="theme-color" content="#6c4cff"/><title>Word Sprint — 英文單字派對</title><link rel="stylesheet" href="style.css"/>
+</head><body><main>
+  <section id="join-screen" class="screen join"><div class="logo">⚡ <span>WORD</span> SPRINT</div><p class="tag">和朋友一起，把英文單字變成遊戲。</p>
+    <div class="card"><label>你的暱稱<input id="name" maxlength="12" placeholder="例如：Mia" autocomplete="off"></label><label>房間代碼 <small>（留白可建立新房間）</small><input id="room" maxlength="16" placeholder="例如：APPLE" autocomplete="off"></label><button id="join">進入遊戲 <b>→</b></button></div><p class="hint">最快答對，拿最高分。每題 12 秒！</p>
+  </section>
+  <section id="game-screen" class="screen game hidden"><header><div class="logo small">⚡ <span>WORD</span> SPRINT</div><button id="share" class="share">↗ 邀請朋友</button></header>
+    <div class="roomline">房間 <strong id="room-code"></strong> <span id="status"></span></div>
+    <div class="game-grid"><section class="play-card"><div id="lobby" class="lobby"><div class="emoji">🎯</div><h1>準備好了嗎？</h1><p>邀請朋友加入，房主按下開始。</p><button id="start" class="primary">開始第一題</button></div>
+      <div id="quiz" class="hidden"><div class="round">ROUND <span id="round">1</span><div class="timer"><i id="timerbar"></i></div></div><p class="prompt">請輸入英文單字：</p><h1 id="meaning">冒險</h1><input id="answer" class="answer" placeholder="輸入英文…" autocomplete="off"/><button id="submit" class="primary">送出答案</button><p id="feedback" class="feedback"></p><button id="next" class="next hidden">下一題 →</button></div>
+    </section><aside class="score-card"><h2>🏆 分數榜</h2><ol id="scores"></ol></aside></div>
+  </section>
+</main><div id="toast" class="toast"></div><script src="/socket.io/socket.io.js"></script><script src="app.js"></script></body></html>
