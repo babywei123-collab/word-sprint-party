@@ -1,7 +1,7 @@
 import express from 'express';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
-import englishWords from 'an-array-of-english-words';
+import englishWords from 'an-array-of-english-words' with { type: 'json' };
 
 const app = express();
 const httpServer = createServer(app);
