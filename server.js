@@ -1,18 +1,34 @@
 import express from 'express';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
-import englishWords from 'an-array-of-english-words' with { type: 'json' };
+import cedict from '@leonsilicon/cc-cedict';
 
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer);
 const PORT = process.env.PORT || 3000;
 const rooms = new Map();
-// A 2,000-word deck. Each room consumes a word only once, so a game never
-// repeats a word (and ends cleanly after the whole deck has been used).
-const WORDS = [...new Set(englishWords.filter(word =>
-  /^[a-z]{4,10}$/.test(word) && new Set(word).size >= 3
-))].slice(0, 2000);
+// A 2,000-word Chinese-to-English deck built from CC-CEDICT. Each room
+// consumes an answer only once, so a game never repeats a word.
+const SKIP_WORDS = new Set(['about','after','again','also','among','another','around','before','being','between','both','each','either','every','from','have','into','more','most','much','only','other','over','same','some','such','than','that','their','them','then','there','these','they','this','those','through','under','very','were','what','when','where','which','while','with','would','your']);
+function buildWordDeck() {
+  const seen = new Set();
+  const deck = [];
+  for (const entry of cedict.entries) {
+    const meaning = entry.traditional || entry.simplified;
+    if (!/[\u4e00-\u9fff]/.test(meaning)) continue;
+    for (const definition of entry.definitions) {
+      for (const token of definition.match(/\b[a-z]{4,10}\b/g) || []) {
+        const word = token.toLowerCase();
+        if (SKIP_WORDS.has(word) || seen.has(word)) continue;
+        seen.add(word); deck.push({ word, meaning });
+        if (deck.length === 2000) return deck;
+      }
+    }
+  }
+  return deck;
+}
+const WORDS = buildWordDeck();
 
 app.use(express.static('.'));
 app.get('/health', (_, res) => res.send('ok'));
@@ -22,19 +38,12 @@ function state(room) {
     players: [...room.players.values()].map(({id, ...p}) => p).sort((a,b) => b.score-a.score), host: room.host };
 }
 function broadcast(room) { io.to(room.id).emit('state', state(room)); }
-function scramble(word) {
-  for (let attempt = 0; attempt < 8; attempt++) {
-    const mixed = [...word].sort(() => Math.random() - 0.5).join('');
-    if (mixed !== word) return mixed;
-  }
-  return [...word].reverse().join('');
-}
 function nextQuestion(room) {
-  const pool = WORDS.filter(word => !room.usedWords.has(word));
+  const pool = WORDS.filter(({word}) => !room.usedWords.has(word));
   if (!pool.length) { room.phase = 'complete'; room.question = null; broadcast(room); return; }
-  const word = pool[Math.floor(Math.random() * pool.length)];
+  const {word, meaning} = pool[Math.floor(Math.random() * pool.length)];
   room.usedWords.add(word);
-  room.question = { word, scramble: scramble(word), startedAt: Date.now(), duration: 12000 }; room.phase = 'playing'; room.round++;
+  room.question = { word, meaning, startedAt: Date.now(), duration: 12000 }; room.phase = 'playing'; room.round++;
   room.answered = new Set(); broadcast(room);
   clearTimeout(room.timer); room.timer = setTimeout(() => { if (room.phase === 'playing') { room.phase = 'reveal'; broadcast(room); } }, 12000);
 }
